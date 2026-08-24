@@ -5,9 +5,6 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from textblob import TextBlob
 
-from paraphrase import paraphrase
-from predict import run_prediction
-
 app = Flask(__name__)
 CORS(app)
 answers = []
@@ -113,30 +110,6 @@ def getContractResponse():
 
 
 
-
-@app.route('/contracts/paraphrase/<path:selected_response>', methods=['GET'])
-def getContractParaphrase(selected_response):
-    print(selected_response)
-    
-    if selected_response == "":
-        return "No answer found in document"
-    else:
-        print('getting paraphrases')
-        paraphrases = paraphrase(selected_response)
-        print(paraphrases)
-        return jsonify(paraphrases)
-
-@app.route('/get_response', methods=['POST'])
-def get_response():
-    question = request.form['selected_response']
-    with open('responses.json', 'r') as file:
-        # json.load expects a file object, not a path string
-        responses = json.load(file)
-        for response in responses:
-            if response['question'] == question:
-                return response['answer']
-    
-    return "Response not found"
 
 if __name__ == '__main__':
     app.run(port=5001)
