@@ -163,7 +163,7 @@ class LegalAgent:
             else:
                 summary = full_text
         except:
-            summary = full_text[:500] + "..."
+            summary = full_text
             
         results = [{"content": f"Executive Summary: {summary}", "metadata": {"source": "Document Summary", "relevance": "High"}}]
         steps = state.get("reasoning_steps", [])
@@ -234,9 +234,9 @@ class LegalAgent:
                  if len(top_sents) > 10:
                       answer = f"Based on the text: {top_sents}"
                  else:
-                      answer = f"Based on the text: {context[:300]}..."
+                      answer = f"Based on the text: {context}"
              except:
-                 answer = f"Based on the analysis: {context[:300]}..."
+                 answer = f"Based on the analysis: {context}"
 
         steps.append("Synthesizer: Draft complete. Awaiting human lawyer approval.")
         
