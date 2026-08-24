@@ -6,8 +6,8 @@
 .workspace {
   display: flex;
   flex-direction: column;
-  height: 100dvh;
-  width: 100vw;
+  height: 100%;
+  width: 100%;
   background-color: #0d1117; /* GitHub Dark dimension */
   color: #c9d1d9;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -90,7 +90,8 @@
   display: grid;
   grid-template-columns: 320px 1fr 320px;
   grid-template-rows: minmax(0, 1fr);
-  height: calc(100dvh - 48px);
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
