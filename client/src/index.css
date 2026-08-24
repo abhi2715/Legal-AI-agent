@@ -97,7 +97,7 @@ body {
   color: var(--text-primary);
   line-height: 1.6;
   overflow-x: hidden;
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 a {
