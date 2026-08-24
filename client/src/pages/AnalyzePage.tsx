@@ -210,7 +210,7 @@ export default function AnalyzePage() {
               onDrop={handleFileDrop}
               onClick={() => fileInputRef.current?.click()}
             >
-              <input ref={fileInputRef} type="file" accept=".pdf,.txt" onChange={handleFileSelect} hidden />
+              <input ref={fileInputRef} type="file" accept=".pdf,.txt,.docx" onChange={handleFileSelect} hidden />
               {file ? (
                 <div className="file-info">
                   <div className="file-icon"><FileText size={20} /></div>

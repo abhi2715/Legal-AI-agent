@@ -59,6 +59,7 @@ def getQuestionsShort():
 
 from agent import LegalAgent
 import pypdf
+import docx
 import hashlib
 
 agent = LegalAgent()
@@ -81,6 +82,14 @@ def getContractResponse():
                         paragraph += text + "\n"
             except Exception as e:
                 print(f"Error parsing PDF: {e}")
+        elif file.filename.lower().endswith('.docx'):
+            try:
+                doc = docx.Document(file.stream)
+                for p in doc.paragraphs:
+                    if p.text:
+                        paragraph += p.text + "\n"
+            except Exception as e:
+                print(f"Error parsing DOCX: {e}")
         else:
             paragraph = file.read().decode("utf-8", errors="replace")
 

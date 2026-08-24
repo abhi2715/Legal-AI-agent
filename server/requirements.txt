@@ -4,3 +4,4 @@ textblob
 langgraph
 gunicorn
 pypdf
+python-docx
