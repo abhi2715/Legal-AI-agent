@@ -20,7 +20,7 @@ export default function Footer() {
 
           <div className="footer__bottom">
             <p className="footer__copy">
-              © {new Date().getFullYear()} LexiScan AI. For research & educational purposes only.
+              © {new Date().getFullYear()} Abhishek KS | LexiScan AI. For research & educational purposes only.
             </p>
             <p className="footer__disclaimer">
               Not a substitute for professional legal advice.
