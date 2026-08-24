@@ -14,8 +14,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 ENV PATH="/root/.local/bin:${PATH}"
 
-EXPOSE 5000
+EXPOSE 10000
 
 # Run behind a production WSGI server with reduced concurrency for 512MB free tier
-# Using shell form to allow $PORT to be evaluated by Render
-CMD gunicorn -b 0.0.0.0:$PORT app:app --workers 1 --threads 2 --timeout 120 --preload
+# Removing --preload so the port binds immediately, avoiding Render timeouts
+CMD ["sh", "-c", "gunicorn -b 0.0.0.0:${PORT:-10000} app:app --workers 1 --threads 2 --timeout 120"]
