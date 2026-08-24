@@ -199,6 +199,12 @@ export default function AnalyzePage() {
 
   return (
     <div className="workspace">
+      {/* DEBUG PANEL */}
+      <div style={{position: 'fixed', top: 50, right: 10, zIndex: 9999, background: 'red', color: 'white', padding: 10}}>
+        Canvas H: {document.querySelector('.orchestrator-canvas')?.clientHeight} / {document.querySelector('.orchestrator-canvas')?.scrollHeight}
+        <br/>
+        WorkspaceGrid H: {document.querySelector('.workspace-grid')?.clientHeight} / {document.querySelector('.workspace-grid')?.scrollHeight}
+      </div>
       {/* Navbar */}
       <nav className="workspace-nav">
         <div className="nav-left">

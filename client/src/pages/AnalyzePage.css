@@ -85,24 +85,29 @@
   border-color: rgba(248, 81, 73, 0.4);
 }
 
-/* Flex Layout to prevent Grid height bugs */
+/* Absolute Layout to prevent all rendering bugs */
 .workspace-grid {
-  display: flex;
-  flex-direction: row;
+  position: relative;
   flex: 1;
   height: 100%;
-  min-height: 0;
   overflow: hidden;
+  display: block; /* override any grid/flex */
 }
 
-.history-panel {
+.doc-panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
   width: 320px;
-  flex-shrink: 0;
 }
 
 .evidence-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
   width: 320px;
-  flex-shrink: 0;
 }
 
 .panel {
@@ -110,7 +115,7 @@
   flex-direction: column;
   background-color: #0d1117;
   border-right: 1px solid #30363d;
-  min-height: 0;
+  border-left: 1px solid #30363d;
   height: 100%;
 }
 
@@ -308,13 +313,14 @@
 
 /* Orchestrator Canvas */
 .orchestrator-panel {
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 320px;
+  right: 320px;
+  bottom: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  height: 100%;
-  flex: 1;
-  min-width: 0;
 }
 
 .orchestrator-canvas {
