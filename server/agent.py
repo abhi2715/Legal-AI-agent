@@ -10,7 +10,7 @@ class AgentState(TypedDict):
     route: str
     retrieved_data: List[Dict[str, Any]]
     reasoning_steps: List[str]
-    final_answer: str
+    answer: str
 
 class LegalAgent:
     def __init__(self):
@@ -176,7 +176,7 @@ class LegalAgent:
         return {
             "context_text": context,
             "citations": citations,
-            "final_answer": answer,
+            "answer": answer,
             "reasoning_steps": steps,
             "status": "Pending Review"
         }
