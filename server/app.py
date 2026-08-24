@@ -62,8 +62,10 @@ def getQuestionsShort():
 
 from agent import LegalAgent
 import pypdf
+import hashlib
 
 agent = LegalAgent()
+last_processed_hash = None
 
 @app.route('/contracts/', methods=["POST"])
 def getContractResponse():
@@ -86,10 +88,16 @@ def getContractResponse():
             paragraph = file.read().decode("utf-8", errors="replace")
 
         
-        # In a real system, we'd only process if the file changed. For demo, we process it.
+        # Cache mechanism to prevent re-embedding the same document on every question
         if len(paragraph) > 0:
-            print("Embedding document into Vector DB...")
-            agent.process_document(paragraph)
+            doc_hash = hashlib.md5(paragraph.encode('utf-8')).hexdigest()
+            global last_processed_hash
+            if doc_hash != last_processed_hash:
+                print("Embedding document into Vector DB...")
+                agent.process_document(paragraph)
+                last_processed_hash = doc_hash
+            else:
+                print("Document already embedded. Skipping FAISS generation...")
             
     if not question:
         return "Please ask a question."
