@@ -1,0 +1,11 @@
+flask
+flask-cors
+textblob
+transformers
+torch
+langchain
+langchain-community
+faiss-cpu
+sentence-transformers
+langgraph
+gunicorn
