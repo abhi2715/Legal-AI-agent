@@ -100,7 +100,7 @@ def getContractResponse():
             global last_processed_hash
             if doc_hash != last_processed_hash:
                 print("Embedding document into Vector DB...")
-                agent.process_document(paragraph)
+                metadata = agent.process_document(paragraph)
                 last_processed_hash = doc_hash
             else:
                 print("Document already embedded. Skipping FAISS generation...")
@@ -115,9 +115,39 @@ def getContractResponse():
     # We format it to match the UI expectations or update the UI to handle it.
     return jsonify(result)
 
- 
+@app.route('/contracts/upload', methods=["POST"])
+def uploadContract():
+    if 'file' in request.files and request.files['file'].filename != '':
+        file = request.files["file"]
+        paragraph = ""
+        if file.filename.lower().endswith('.pdf'):
+            try:
+                reader = pypdf.PdfReader(file.stream)
+                for page in reader.pages:
+                    text = page.extract_text()
+                    if text:
+                        paragraph += text + "\n"
+            except Exception as e:
+                print(f"Error parsing PDF: {e}")
+        elif file.filename.lower().endswith('.docx'):
+            try:
+                doc = docx.Document(file.stream)
+                for p in doc.paragraphs:
+                    if p.text:
+                        paragraph += p.text + "\n"
+            except Exception as e:
+                print(f"Error parsing DOCX: {e}")
+        else:
+            paragraph = file.read().decode("utf-8", errors="replace")
 
-
+        if len(paragraph) > 0:
+            doc_hash = hashlib.md5(paragraph.encode('utf-8')).hexdigest()
+            global last_processed_hash
+            metadata = agent.process_document(paragraph)
+            last_processed_hash = doc_hash
+            return jsonify(metadata)
+            
+    return jsonify({"error": "No valid file uploaded"}), 400
 
 
 if __name__ == '__main__':

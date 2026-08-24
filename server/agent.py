@@ -64,7 +64,43 @@ class LegalAgent:
         return workflow.compile()
 
     def process_document(self, text: str):
-        """Split document into chunks for fast heuristic retrieval."""
+        """Split document into chunks and extract risk/metadata."""        
+        # Risk Analysis (Red Flags)
+        red_flag_keywords = ["irrevocable", "perpetuity", "indemnify", "uncapped liability", "liquidated damages", "arbitration", "without notice", "exclusive"]
+        found_flags = []
+        text_lower = text.lower()
+        for flag in red_flag_keywords:
+            if flag in text_lower:
+                found_flags.append(flag)
+        
+        risk_score = min(100, len(found_flags) * 15)
+        risk_level = "High" if risk_score > 60 else "Medium" if risk_score > 30 else "Low"
+
+        # Entity Extraction (Heuristics)
+        entities = {}
+        # Naive extraction for demo purposes
+        if "between" in text_lower and "and" in text_lower:
+            try:
+                import re
+                parties = re.search(r"between\s+(.*?)\s+and\s+(.*?)(?:\.|,)", text, re.IGNORECASE)
+                if parties:
+                    entities["Party A"] = parties.group(1).strip()
+                    entities["Party B"] = parties.group(2).strip()
+            except:
+                pass
+        
+        # Money extraction
+        import re
+        money = re.findall(r"\$\d+(?:,\d+)*(?:\.\d+)?", text)
+        if money:
+            entities["Values Detected"] = ", ".join(list(set(money))[:3])
+            
+        metadata = {
+            "risk_score": risk_score,
+            "risk_level": risk_level,
+            "red_flags": found_flags,
+            "entities": entities
+        }
         # Simple fast chunking by paragraph
         paragraphs = [p.strip() for p in text.split('\n\n') if len(p.strip()) > 50]
         # If no double newlines, split by single newline
@@ -78,7 +114,8 @@ class LegalAgent:
             {"content": chunk, "metadata": {"source": "Contract", "chunk_id": i, "location": f"Section {i//5 + 1}"}}
             for i, chunk in enumerate(paragraphs)
         ]
-        return True
+        self.knowledge_base = paragraphs
+        return metadata
 
     def _get_keywords(self, text: str):
         words = re.findall(r'\b\w+\b', text.lower())

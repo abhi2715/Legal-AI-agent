@@ -41,6 +41,7 @@ const SUGGESTED_QUESTIONS = [
 
 export default function AnalyzePage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [docMetadata, setDocMetadata] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [questionDraft, setQuestionDraft] = useState('');
@@ -98,6 +99,25 @@ export default function AnalyzePage() {
         setPdfUrl(null);
         setFileText('Microsoft Word Document (.docx) successfully loaded and ready for analysis.');
       }
+      
+      // Upload to extract metadata (Risk Score, Entities)
+      const formData = new FormData();
+      formData.set('file', f);
+      fetch('https://legal-ai-project.onrender.com/contracts/upload', {
+        method: 'POST',
+        body: formData,
+      }).then(res => res.json())
+      .then(data => {
+        setDocMetadata(data);
+      }).catch(err => {
+        // Fallback if production server is not used
+        fetch('http://localhost:5001/contracts/upload', {
+          method: 'POST',
+          body: formData,
+        }).then(res => res.json())
+        .then(data => setDocMetadata(data)).catch(console.error);
+      });
+
     } else {
       setFile(null);
       setFileText('');
@@ -389,6 +409,33 @@ export default function AnalyzePage() {
                 ))}
               </div>
             )}
+            
+            {docMetadata && (
+              <div className="doc-metadata-panel">
+                <div className="meta-section">
+                  <h4>Risk Analysis</h4>
+                  <div className={`risk-badge risk-${docMetadata.risk_level.toLowerCase()}`}>
+                    Risk Score: {docMetadata.risk_score}/100 ({docMetadata.risk_level})
+                  </div>
+                  {docMetadata.red_flags.length > 0 && (
+                    <div className="red-flags">
+                      <strong>Red Flags:</strong> {docMetadata.red_flags.join(', ')}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="meta-section">
+                  <h4>Extracted Entities</h4>
+                  <ul className="entity-list">
+                    {Object.entries(docMetadata.entities).map(([k, v]) => (
+                      <li key={k}><strong>{k}:</strong> {v as string}</li>
+                    ))}
+                  </ul>
+                  {Object.keys(docMetadata.entities).length === 0 && <span className="text-muted">No entities detected.</span>}
+                </div>
+              </div>
+            )}
+            
           </div>
         </aside>
       </div>
