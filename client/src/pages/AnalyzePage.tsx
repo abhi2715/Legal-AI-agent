@@ -1,16 +1,14 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Upload,
   FileText,
   Send,
   Loader2,
-  CheckCircle2,
   AlertCircle,
   X,
   ChevronRight,
   Shield,
-  Eye,
   BookOpen,
   ArrowLeft,
   Briefcase,
