@@ -110,6 +110,7 @@ export default function AnalyzePage() {
       .then(data => {
         setDocMetadata(data);
       }).catch(err => {
+        console.error("Upload error:", err);
         // Fallback if production server is not used
         fetch('http://localhost:5001/contracts/upload', {
           method: 'POST',
