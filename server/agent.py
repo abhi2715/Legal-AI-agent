@@ -39,6 +39,7 @@ class LegalAgent:
         workflow.add_node("contract_retriever", self.node_contract_retriever)
         workflow.add_node("case_law_expert", self.node_case_law_expert)
         workflow.add_node("statute_expert", self.node_statute_expert)
+        workflow.add_node("summarizer", self.node_summarizer)
         workflow.add_node("synthesizer", self.node_synthesizer)
 
         workflow.set_entry_point("analyze_intent")
@@ -49,13 +50,15 @@ class LegalAgent:
             {
                 "contract": "contract_retriever",
                 "case_law": "case_law_expert",
-                "statutes": "statute_expert"
+                "statutes": "statute_expert",
+                "summarizer": "summarizer"
             }
         )
 
         workflow.add_edge("contract_retriever", "synthesizer")
         workflow.add_edge("case_law_expert", "synthesizer")
         workflow.add_edge("statute_expert", "synthesizer")
+        workflow.add_edge("summarizer", "synthesizer")
         workflow.add_edge("synthesizer", END)
 
         return workflow.compile()
@@ -101,10 +104,34 @@ class LegalAgent:
             route = "case_law"
         elif "statute" in query or "law" in query or "code" in query or "legal requirement" in query:
             route = "statutes"
+        elif "summarize" in query or "summarise" in query or "summary" in query or "overview" in query:
+            route = "summarizer"
         
         steps = state.get("reasoning_steps", [])
         steps.append(f"Intent Analysis: Directed query to {route.upper()} agent (Fast NLP Mode).")
         return {"route": route, "reasoning_steps": steps}
+
+    def node_summarizer(self, state: AgentState):
+        full_text = " ".join(self.knowledge_base)
+        if not full_text:
+            return {"retrieved_data": [{"content": "No document uploaded to summarize.", "metadata": {"source": "Summarizer", "relevance": "Low"}}]}
+        
+        try:
+            blob = TextBlob(full_text)
+            sentences = blob.sentences
+            if len(sentences) > 3:
+                scored = sorted([(len(str(s)), str(s)) for s in sentences], key=lambda x: x[0], reverse=True)
+                top_sents = [s for _, s in scored[:3]]
+                summary = " ".join(top_sents)
+            else:
+                summary = full_text
+        except:
+            summary = full_text[:500] + "..."
+            
+        results = [{"content": f"Executive Summary: {summary}", "metadata": {"source": "Document Summary", "relevance": "High"}}]
+        steps = state.get("reasoning_steps", [])
+        steps.append("Summarizer Agent: Extracted key points using TextBlob NLP.")
+        return {"retrieved_data": results, "reasoning_steps": steps}
 
     def _search_mock(self, query: str, db: dict, source_name: str) -> List[Dict]:
         query_keywords = self._get_keywords(query)

@@ -304,6 +304,7 @@
 
 .orchestrator-canvas {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 24px;
   display: flex;
@@ -513,6 +514,7 @@
 /* Orchestrator Input */
 .orchestrator-input {
   padding: 16px;
+  flex-shrink: 0;
   background-color: #161b22;
   border-top: 1px solid #30363d;
 }
