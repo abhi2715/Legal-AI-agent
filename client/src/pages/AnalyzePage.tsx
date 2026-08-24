@@ -47,6 +47,7 @@ export default function AnalyzePage() {
   const [file, setFile] = useState<File | null>(null);
   const [fileText, setFileText] = useState<string>('');
   const [backendOk, setBackendOk] = useState<boolean | null>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [activeTab, setActiveTab] = useState<'document' | 'suggestions'>('document');
 
@@ -82,16 +83,22 @@ export default function AnalyzePage() {
       setQuestionDraft('');
       
       // Attempt to preview text if it's a txt file for the document sidebar
+      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+      
       if (f.name.endsWith('.txt')) {
         const reader = new FileReader();
         reader.onload = (e) => setFileText(e.target?.result as string);
         reader.readAsText(f);
-      } else {
-        setFileText('PDF Preview not available in this demo. Proceed to query.');
+        setPdfUrl(null);
+      } else if (f.name.endsWith('.pdf')) {
+        setPdfUrl(URL.createObjectURL(f));
+        setFileText('');
       }
     } else {
       setFile(null);
       setFileText('');
+      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+      setPdfUrl(null);
     }
   };
 
@@ -211,7 +218,13 @@ export default function AnalyzePage() {
                     <div className="file-name">{file.name}</div>
                     <div className="file-size">{Math.round(file.size / 1024)} KB Mounted</div>
                   </div>
-                  <button className="file-remove" onClick={(e) => { e.stopPropagation(); setFile(null); setFileText(''); }}>
+                  <button className="file-remove" onClick={(e) => { 
+                    e.stopPropagation(); 
+                    setFile(null); 
+                    setFileText(''); 
+                    if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+                    setPdfUrl(null);
+                  }}>
                     <X size={14} />
                   </button>
                 </div>
@@ -231,7 +244,9 @@ export default function AnalyzePage() {
             <div className="doc-body">
               {activeTab === 'document' && (
                 <div className="doc-preview">
-                  {fileText ? <pre className="doc-text">{fileText}</pre> : <div className="doc-placeholder">No document mounted for preview.</div>}
+                  {fileText ? <pre className="doc-text">{fileText}</pre> : 
+                   pdfUrl ? <iframe src={`${pdfUrl}#toolbar=0&navpanes=0`} width="100%" height="100%" style={{ border: 'none', borderRadius: '4px', minHeight: '400px' }} title="PDF Preview" /> :
+                   <div className="doc-placeholder">No document mounted for preview.</div>}
                 </div>
               )}
               {activeTab === 'suggestions' && (
