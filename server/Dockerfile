@@ -16,5 +16,5 @@ ENV PATH="/root/.local/bin:${PATH}"
 
 EXPOSE 5000
 
-# Run behind a production WSGI server
-CMD ["gunicorn", "-b", "0.0.0.0:5000", "app:app", "--workers", "2", "--threads", "4", "--timeout", "120"]
+# Run behind a production WSGI server with reduced concurrency for 512MB free tier
+CMD ["gunicorn", "-b", "0.0.0.0:5000", "app:app", "--workers", "1", "--threads", "2", "--timeout", "120", "--preload"]
