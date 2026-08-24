@@ -11,11 +11,11 @@ export default function App() {
         <Route
           path="/"
           element={
-            <>
+            <div className="landing-layout" style={{ height: '100%', overflowY: 'auto' }}>
               <Navbar />
               <LandingPage />
               <Footer />
-            </>
+            </div>
           }
         />
         <Route path="/analyze" element={<AnalyzePage />} />
