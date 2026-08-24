@@ -1,5 +1,8 @@
 import os
+import torch
 from typing import Dict, Any, List, TypedDict
+
+torch.set_num_threads(1)
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
@@ -152,7 +155,8 @@ class LegalAgent:
         
         try:
             inputs = self.tokenizer(prompt, return_tensors="pt", max_length=512, truncation=True)
-            outputs = self.model.generate(**inputs, max_length=200)
+            with torch.no_grad():
+                outputs = self.model.generate(**inputs, max_length=200)
             answer = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
             if len(answer) < 10 and context:
                 answer = f"Based on the analysis: {context[:300]}..."
