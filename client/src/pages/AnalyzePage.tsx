@@ -77,7 +77,8 @@ export default function AnalyzePage() {
   };
 
   const processFile = (f: File | null) => {
-    if (f && (f.name.endsWith('.pdf') || f.name.endsWith('.txt') || f.name.endsWith('.docx'))) {
+    const name = f ? f.name.toLowerCase() : '';
+    if (f && (name.endsWith('.pdf') || name.endsWith('.txt') || name.endsWith('.docx'))) {
       setFile(f);
       setMessages([]);
       setQuestionDraft('');
@@ -85,15 +86,15 @@ export default function AnalyzePage() {
       // Attempt to preview text if it's a txt file for the document sidebar
       if (pdfUrl) URL.revokeObjectURL(pdfUrl);
       
-      if (f.name.endsWith('.txt')) {
+      if (name.endsWith('.txt')) {
         const reader = new FileReader();
         reader.onload = (e) => setFileText(e.target?.result as string);
         reader.readAsText(f);
         setPdfUrl(null);
-      } else if (f.name.endsWith('.pdf')) {
+      } else if (name.endsWith('.pdf')) {
         setPdfUrl(URL.createObjectURL(f));
         setFileText('');
-      } else if (f.name.endsWith('.docx')) {
+      } else if (name.endsWith('.docx')) {
         setPdfUrl(null);
         setFileText('Microsoft Word Document (.docx) successfully loaded and ready for analysis.');
       }
@@ -213,7 +214,7 @@ export default function AnalyzePage() {
               onDrop={handleFileDrop}
               onClick={() => fileInputRef.current?.click()}
             >
-              <input ref={fileInputRef} type="file" accept=".pdf,.txt,.docx" onChange={handleFileSelect} hidden />
+              <input ref={fileInputRef} type="file" accept=".pdf,.txt,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={handleFileSelect} hidden />
               {file ? (
                 <div className="file-info">
                   <div className="file-icon"><FileText size={20} /></div>
