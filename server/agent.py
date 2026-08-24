@@ -11,6 +11,9 @@ class AgentState(TypedDict):
     retrieved_data: List[Dict[str, Any]]
     reasoning_steps: List[str]
     answer: str
+    citations: List[Dict[str, Any]]
+    status: str
+    source: str
 
 class LegalAgent:
     def __init__(self):
@@ -178,7 +181,8 @@ class LegalAgent:
             "citations": citations,
             "answer": answer,
             "reasoning_steps": steps,
-            "status": "Pending Review"
+            "status": "Pending Review",
+            "source": state.get("route", "contract")
         }
 
     def run(self, query: str) -> Dict[str, Any]:
