@@ -61,6 +61,8 @@ def getQuestionsShort():
 
 
 from agent import LegalAgent
+import pypdf
+
 agent = LegalAgent()
 
 @app.route('/contracts/', methods=["POST"])
@@ -69,8 +71,20 @@ def getContractResponse():
     
     if 'file' in request.files and request.files['file'].filename != '':
         file = request.files["file"]
-        # Use errors='replace' to prevent crashing on non-UTF8 bytes (like PDFs if they somehow get here)
-        paragraph = file.getvalue().decode("utf-8", errors="replace")
+        
+        paragraph = ""
+        if file.filename.lower().endswith('.pdf'):
+            try:
+                reader = pypdf.PdfReader(file.stream)
+                for page in reader.pages:
+                    text = page.extract_text()
+                    if text:
+                        paragraph += text + "\n"
+            except Exception as e:
+                print(f"Error parsing PDF: {e}")
+        else:
+            paragraph = file.read().decode("utf-8", errors="replace")
+
         
         # In a real system, we'd only process if the file changed. For demo, we process it.
         if len(paragraph) > 0:
