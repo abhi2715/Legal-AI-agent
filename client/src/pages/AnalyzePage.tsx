@@ -77,7 +77,7 @@ export default function AnalyzePage() {
   };
 
   const processFile = (f: File | null) => {
-    if (f && (f.name.endsWith('.pdf') || f.name.endsWith('.txt'))) {
+    if (f && (f.name.endsWith('.pdf') || f.name.endsWith('.txt') || f.name.endsWith('.docx'))) {
       setFile(f);
       setMessages([]);
       setQuestionDraft('');
@@ -93,6 +93,9 @@ export default function AnalyzePage() {
       } else if (f.name.endsWith('.pdf')) {
         setPdfUrl(URL.createObjectURL(f));
         setFileText('');
+      } else if (f.name.endsWith('.docx')) {
+        setPdfUrl(null);
+        setFileText('Microsoft Word Document (.docx) successfully loaded and ready for analysis.');
       }
     } else {
       setFile(null);
