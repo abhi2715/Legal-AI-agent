@@ -56,7 +56,7 @@ export default function Hero() {
 
         <div className="hero__stats animate-fade-in-up delay-4">
           <div className="hero__stat">
-            <span className="hero__stat-number">500+</span>
+            <span className="hero__stat-number">50+</span>
             <span className="hero__stat-label">Contracts Analyzed</span>
           </div>
           <div className="hero__stat-divider" />
