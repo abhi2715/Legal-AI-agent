@@ -1,21 +1,14 @@
-# Specify the base image
-FROM python:3.9-slim
+FROM python:3.12-slim
 
-# Set the working directory
 WORKDIR /app
-
-# Copy the requirements.txt file
 COPY requirements.txt .
-
-# Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy the source code
 COPY . .
-ENV PATH="/root/.local/bin:${PATH}"
+
+# SQLite app data and LangGraph checkpoints. Mount a volume here to keep reviews across restarts.
+ENV LEXISCAN_DATA_DIR=/data
+VOLUME ["/data"]
 
 EXPOSE 10000
-
-# Run behind a production WSGI server with reduced concurrency for 512MB free tier
-# Removing --preload so the port binds immediately, avoiding Render timeouts
-CMD ["sh", "-c", "gunicorn -b 0.0.0.0:${PORT:-10000} app:app --workers 1 --threads 2 --timeout 120"]
+# One worker: LangGraph checkpoints and run locks live in this process's SQLite files.
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-10000} --workers 1"]

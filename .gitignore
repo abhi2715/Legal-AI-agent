@@ -31,3 +31,7 @@ yarn-error.log*
 # Local env files
 .env.local
 .env.*.local
+
+# LexiScan runtime data (SQLite DBs, checkpoints)
+server/var/
+.pytest_cache/
