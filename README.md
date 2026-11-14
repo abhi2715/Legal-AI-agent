@@ -111,7 +111,8 @@ the API before multi-user deployment.
 | `LEXISCAN_LLM_CONCURRENCY` | `1` | Parallel model calls (raise on a paid Groq tier) |
 | `LEXISCAN_EFFORT` | `medium` | Default effort; some nodes override it |
 | `LEXISCAN_OFFLINE` | — | `1` forces offline mode |
-| `LEXISCAN_DATA_DIR` | `server/var` | SQLite app DB and checkpoints |
+| `DATABASE_URL` | — | Postgres for app data and checkpoints; unset uses SQLite |
+| `LEXISCAN_DATA_DIR` | `server/var` | SQLite app DB and checkpoints (when `DATABASE_URL` is unset) |
 | `LEXISCAN_CORS_ORIGINS` | `*` | Comma-separated allowed origins |
 | `LEXISCAN_MAX_REVISIONS` | `4` | Revision loop bound |
 | `VITE_BACKEND_URL` (client) | dev: `http://127.0.0.1:5001`, prod build: `https://lexiscan-backend-gupj.onrender.com` | API base URL |
@@ -127,8 +128,9 @@ Run one server worker: checkpoints and per-thread run locks are process-local SQ
   (the legacy `gunicorn app:app` command also works; `gunicorn.conf.py` selects the uvicorn worker)
 - Python version comes from `server/.python-version` (3.12)
 - Environment variables: `GROQ_API_KEY` (otherwise offline mode); optionally `LEXISCAN_CORS_ORIGINS=https://<your-app>.vercel.app`
-- Free instances have an ephemeral disk, so the SQLite data resets on redeploys and restarts. To keep it, attach a
-  persistent disk and set `LEXISCAN_DATA_DIR` to the mount path.
+- `DATABASE_URL`: a Postgres connection string (free tiers: Neon or Supabase). Required on Render's free plan,
+  whose disk is wiped on every deploy and restart; without it the server falls back to SQLite and the app shows a
+  "Temporary storage" warning. App data and LangGraph checkpoints both go to Postgres.
 
 **Frontend on Vercel** (root directory `client`, Vite preset): set `VITE_BACKEND_URL` to the Render URL
 if it differs from the default above. `vercel.json` rewrites every route to `index.html` so deep links work.

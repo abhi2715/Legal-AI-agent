@@ -19,6 +19,7 @@ export interface Profile {
   privacy_redact: number;
   ask_clarifications: number;
   engine?: EngineStatus;
+  storage?: 'postgres' | 'sqlite';
 }
 
 export interface Clause {

@@ -47,7 +47,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (k in body) body[k] = Boolean(body[k]);
         }
         const updated = await api<Profile>('/me', { method: 'PATCH', body });
-        setProfile((p) => ({ ...updated, engine: p?.engine }));
+        setProfile((p) => ({ ...updated, engine: p?.engine, storage: p?.storage }));
       } catch (e) {
         toast((e as Error).message, 'error');
       }

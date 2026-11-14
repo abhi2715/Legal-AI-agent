@@ -6,6 +6,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = Path(os.getenv("LEXISCAN_DATA_DIR", BASE_DIR / "var"))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
+# Set DATABASE_URL (postgresql://...) to keep data across deploys on hosts with an ephemeral disk.
+DATABASE_URL = (os.getenv("DATABASE_URL") or "").strip() or None
 APP_DB = DATA_DIR / "lexiscan.db"
 CHECKPOINT_DB = DATA_DIR / "checkpoints.db"
 

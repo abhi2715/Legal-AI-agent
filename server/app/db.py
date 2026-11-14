@@ -1,8 +1,12 @@
-"""SQLite persistence for application data.
+"""Persistence for application data: SQLite locally, Postgres when DATABASE_URL is set.
 
-LangGraph checkpoints live in a separate database (see graphs/runtime.py). This store holds
-the things a human reviewer owns: profiles, documents, findings and their review decisions,
-obligations, playbook rules, learned preferences and the audit trail.
+Hosts with an ephemeral disk (Render's free tier) lose SQLite files on every deploy or restart,
+so production should point DATABASE_URL at a hosted Postgres. The SQL is written once in SQLite
+style; `_PgConnection` translates the few differences.
+
+LangGraph checkpoints live alongside (see graphs/common.py). This store holds the things a human
+reviewer owns: profiles, documents, findings and their review decisions, obligations, playbook
+rules, learned preferences and the audit trail.
 """
 from __future__ import annotations
 
@@ -13,7 +17,10 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from typing import Any, Iterable
 
-from .config import APP_DB
+from .config import APP_DB, DATABASE_URL
+
+if DATABASE_URL:
+    from psycopg_pool import ConnectionPool
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
@@ -150,15 +157,75 @@ DEFAULT_PLAYBOOK = [
 
 
 def now() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+    # Microseconds keep rows created in the same second (seeded rules, audit bursts) in order.
+    return datetime.now(timezone.utc).isoformat(timespec="microseconds")
 
 
 def new_id(prefix: str) -> str:
     return f"{prefix}_{uuid.uuid4().hex[:12]}"
 
 
+class Row(dict):
+    """Postgres row that, like sqlite3.Row, can be read by column name or by position."""
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return list(self.values())[key]
+        return super().__getitem__(key)
+
+
+def _row_factory(cursor):
+    names = [c.name for c in cursor.description or []]
+    return lambda values: Row(zip(names, values))
+
+
+class _PgConnection:
+    """Accepts SQLite-style SQL (`?` placeholders, INSERT OR IGNORE) and runs it on Postgres."""
+
+    def __init__(self, conn):
+        self._conn = conn
+
+    @staticmethod
+    def _sql(sql: str) -> str:
+        sql = sql.replace("%", "%%").replace("?", "%s")
+        if "INSERT OR IGNORE INTO" in sql:
+            sql = sql.replace("INSERT OR IGNORE INTO", "INSERT INTO") + " ON CONFLICT DO NOTHING"
+        return sql
+
+    @staticmethod
+    def _params(params) -> tuple:
+        # SQLite stores booleans as integers; the schema keeps INTEGER columns for them.
+        return tuple(int(p) if isinstance(p, bool) else p for p in params)
+
+    def execute(self, sql: str, params=()):
+        cur = self._conn.cursor(row_factory=_row_factory)
+        cur.execute(self._sql(sql), self._params(params))
+        return cur
+
+    def executemany(self, sql: str, seq):
+        cur = self._conn.cursor()
+        cur.executemany(self._sql(sql), [self._params(p) for p in seq])
+        return cur
+
+
+_pool = None
+
+
+def _get_pool():
+    global _pool
+    if _pool is None:
+        # prepare_threshold=None keeps it compatible with PgBouncer-style poolers (Supabase, Neon).
+        _pool = ConnectionPool(DATABASE_URL, min_size=1, max_size=5, open=True,
+                               kwargs={"prepare_threshold": None}, check=ConnectionPool.check_connection)
+    return _pool
+
+
 @contextmanager
 def connect():
+    if DATABASE_URL:
+        with _get_pool().connection() as conn:  # commits on success, rolls back on error
+            yield _PgConnection(conn)
+        return
     conn = sqlite3.connect(APP_DB, timeout=30)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
@@ -171,14 +238,22 @@ def connect():
 
 def init_db() -> None:
     with connect() as conn:
-        conn.executescript(SCHEMA)
+        if DATABASE_URL:
+            for statement in filter(str.strip, SCHEMA.split(";")):
+                conn.execute(statement)
+        else:
+            conn.executescript(SCHEMA)
 
 
-def row(r: sqlite3.Row | None) -> dict[str, Any] | None:
+def backend() -> str:
+    return "postgres" if DATABASE_URL else "sqlite"
+
+
+def row(r) -> dict[str, Any] | None:
     return dict(r) if r is not None else None
 
 
-def rows(rs: Iterable[sqlite3.Row]) -> list[dict[str, Any]]:
+def rows(rs: Iterable) -> list[dict[str, Any]]:
     return [dict(r) for r in rs]
 
 

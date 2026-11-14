@@ -16,7 +16,7 @@ import {
   ShieldCheck,
   X,
 } from 'lucide-react';
-import { api, saveBlob } from '../../../lib/api';
+import { api, saveBlob, ApiError } from '../../../lib/api';
 import { useApp } from '../../../lib/app-context';
 import { Markdown } from '../../../lib/markdown';
 import { pretty } from '../../../lib/format';
@@ -170,13 +170,19 @@ function Triage({
         }
         return true;
       } catch (e) {
-        toast((e as Error).message, 'error');
+        if (e instanceof ApiError && e.status === 404) {
+          // The page is out of date (finding replaced by a re-run, or contract removed): resync.
+          toast('This finding has changed on the server. Reloading the latest version.', 'error');
+          await reload();
+        } else {
+          toast((e as Error).message, 'error');
+        }
         return false;
       } finally {
         inFlight.current = false;
       }
     },
-    [sorted, toast, onFindingUpdated],
+    [sorted, toast, onFindingUpdated, reload],
   );
 
   const acceptLow = async () => {
@@ -185,6 +191,7 @@ function Triage({
       await reload();
     } catch (e) {
       toast((e as Error).message, 'error');
+      if (e instanceof ApiError && e.status === 404) await reload();
     }
   };
 

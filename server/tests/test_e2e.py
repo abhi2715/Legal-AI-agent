@@ -58,10 +58,11 @@ def test_full_review_and_qa_flow():
         r = client.patch(f"/findings/{high[0]['id']}", headers=H, json={"status": "dismissed"})
         assert r.status_code == 422
 
+    first_ai = next((f["id"] for f in d["findings"] if f["source"] == "ai"), None)
     for i, f in enumerate(d["findings"]):
-        if f["source"] == "ai" and i == 0:
+        if f["id"] == first_ai:
             body = {"status": "dismissed", "reviewer_note": "the obligation is mutual"}
-        elif i == 1:
+        elif i == 1 or (first_ai is None and i == 0):
             body = {"status": "edited", "final_suggestion": "Either party may terminate on 30 days notice."}
         else:
             body = {"status": "accepted"}

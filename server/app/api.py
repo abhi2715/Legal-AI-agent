@@ -44,7 +44,7 @@ def _doc_or_404(doc_id: str, user: dict) -> dict[str, Any]:
 
 @router.get("/health")
 def health():
-    return {"status": "ok", "engine": engine.status()}
+    return {"status": "ok", "engine": engine.status(), "storage": db.backend()}
 
 
 class ProfilePatch(BaseModel):
@@ -60,7 +60,7 @@ class ProfilePatch(BaseModel):
 
 @router.get("/me")
 def get_me(user=Depends(current_user)):
-    return {**user, "engine": engine.status()}
+    return {**user, "engine": engine.status(), "storage": db.backend()}
 
 
 @router.patch("/me")
@@ -152,9 +152,10 @@ def get_document(doc_id: str, user=Depends(current_user)):
     with db.connect() as conn:
         findings = db.rows(conn.execute(
             "SELECT * FROM findings WHERE doc_id=? ORDER BY CASE risk WHEN 'high' THEN 0 WHEN "
-            "'medium' THEN 1 WHEN 'low' THEN 2 ELSE 3 END, created_at", (doc_id,)))
+            "'medium' THEN 1 WHEN 'low' THEN 2 ELSE 3 END, created_at, source, clause_id, title, id",
+            (doc_id,)))
         obligations = db.rows(conn.execute(
-            "SELECT * FROM obligations WHERE doc_id=? ORDER BY COALESCE(due_date, '9999'), party",
+            "SELECT * FROM obligations WHERE doc_id=? ORDER BY COALESCE(due_date, '9999'), party, id",
             (doc_id,)))
         threads = db.rows(conn.execute(
             "SELECT * FROM threads WHERE doc_id=? ORDER BY created_at DESC", (doc_id,)))
@@ -689,7 +690,7 @@ def list_audit(doc_id: str | None = None, format: Literal["json", "csv"] = "json
     if doc_id:
         q += " AND doc_id=?"
         args.append(doc_id)
-    q += " ORDER BY created_at DESC, rowid DESC LIMIT ?"
+    q += " ORDER BY created_at DESC, id DESC LIMIT ?"
     args.append(max(1, min(limit, 5000)))
     with db.connect() as conn:
         items = db.rows(conn.execute(q, args))

@@ -11,14 +11,24 @@ from typing import Any, Iterator
 from langgraph.checkpoint.sqlite import SqliteSaver
 
 from .. import db
-from ..config import CHECKPOINT_DB
+from ..config import CHECKPOINT_DB, DATABASE_URL
 from ..llm import engine
 from ..privacy import Redactor, redact_clauses
 
 log = logging.getLogger("lexiscan.graph")
 
-_conn = sqlite3.connect(CHECKPOINT_DB, check_same_thread=False)
-checkpointer = SqliteSaver(_conn)
+if DATABASE_URL:
+    from langgraph.checkpoint.postgres import PostgresSaver
+    from psycopg.rows import dict_row
+    from psycopg_pool import ConnectionPool
+
+    _pool = ConnectionPool(DATABASE_URL, min_size=1, max_size=5, open=True,
+                           check=ConnectionPool.check_connection,
+                           kwargs={"autocommit": True, "prepare_threshold": None, "row_factory": dict_row})
+    checkpointer = PostgresSaver(_pool)
+else:
+    _conn = sqlite3.connect(CHECKPOINT_DB, check_same_thread=False)
+    checkpointer = SqliteSaver(_conn)
 checkpointer.setup()
 
 # One run per thread at a time; a second request for the same thread waits instead of corrupting

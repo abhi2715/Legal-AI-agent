@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, BookCheck, CalendarDays, ClipboardCheck, History, MessagesSquare } from 'lucide-react';
-import { api, stream } from '../../lib/api';
+import { api, ApiError, stream } from '../../lib/api';
 import { useApp } from '../../lib/app-context';
 import { STATUS_LABEL } from '../../lib/format';
 import type { DocumentDetail, Finding, Risk, TraceEntry } from '../../lib/types';
@@ -33,7 +33,11 @@ export default function DocumentWorkspace() {
       setDoc(await api<DocumentDetail>(`/documents/${docId}`));
       setVersion((v) => v + 1);
     } catch (e) {
-      setError((e as Error).message);
+      setError(
+        e instanceof ApiError && e.status === 404
+          ? 'This contract is no longer on the server. It may have been deleted, or the server lost its data when it restarted. Upload it again to continue.'
+          : (e as Error).message,
+      );
     }
   }, [docId]);
 

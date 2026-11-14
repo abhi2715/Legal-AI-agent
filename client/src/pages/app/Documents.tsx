@@ -8,7 +8,7 @@ import type { DocumentDetail, DocumentSummary, Insights } from '../../lib/types'
 import { Empty, Spinner } from '../../components/ui';
 
 export default function Documents() {
-  const { toast, engine } = useApp();
+  const { toast, engine, profile } = useApp();
   const navigate = useNavigate();
   const [docs, setDocs] = useState<DocumentSummary[] | null>(null);
   const [samples, setSamples] = useState<{ id: string; name: string }[]>([]);
@@ -89,6 +89,16 @@ export default function Documents() {
           <div>
             <b>Running in offline mode.</b> Analysis uses deterministic pattern matching, so it flags and quotes but does
             not interpret. {engine.reason ?? 'Set GROQ_API_KEY on the server to enable AI analysis.'}
+          </div>
+        </div>
+      )}
+
+      {import.meta.env.PROD && profile?.storage === 'sqlite' && (
+        <div className="alert alert-warn" style={{ marginBottom: 16 }}>
+          <AlertTriangle size={16} />
+          <div>
+            <b>Temporary storage.</b> This server keeps data on a disk that is wiped when it restarts or redeploys, so
+            contracts and reviews can disappear. Set <code>DATABASE_URL</code> on the server to a Postgres database to keep them.
           </div>
         </div>
       )}
