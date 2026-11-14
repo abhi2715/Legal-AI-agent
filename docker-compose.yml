@@ -4,7 +4,7 @@ services:
     ports:
       - "5001:10000"
     environment:
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
     volumes:
       - lexiscan-data:/data
 

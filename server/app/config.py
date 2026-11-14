@@ -9,14 +9,17 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 APP_DB = DATA_DIR / "lexiscan.db"
 CHECKPOINT_DB = DATA_DIR / "checkpoints.db"
 
-MODEL = os.getenv("LEXISCAN_MODEL", "claude-opus-5-5")
+# Any Groq chat model id works; gpt-oss models get strict JSON-schema outputs.
+MODEL = os.getenv("GROQ_MODEL") or os.getenv("LEXISCAN_MODEL") or "openai/gpt-oss-120b"
 EFFORT = os.getenv("LEXISCAN_EFFORT", "medium")
 
-# Offline mode is used when no Anthropic credentials are configured, or when forced.
+# Offline mode is used when no Groq API key is configured, or when forced.
 FORCE_OFFLINE = os.getenv("LEXISCAN_OFFLINE", "").lower() in {"1", "true", "yes"}
 
 MAX_UPLOAD_BYTES = int(os.getenv("LEXISCAN_MAX_UPLOAD_MB", "15")) * 1024 * 1024
 MAX_REVISIONS = int(os.getenv("LEXISCAN_MAX_REVISIONS", "4"))
+# Parallel model calls. Groq's free tier has low tokens-per-minute limits, so default to one.
+LLM_CONCURRENCY = int(os.getenv("LEXISCAN_LLM_CONCURRENCY", "1"))
 
 CORS_ORIGINS = [
     o.strip()

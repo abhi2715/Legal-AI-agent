@@ -5,7 +5,7 @@ stops for your judgement at every point that matters. The AI drafts and you deci
 correction you make becomes a visible, editable preference that shapes the next draft.
 
 - **client/**: React 19 + TypeScript + Vite (light, dark and system themes)
-- **server/**: FastAPI + LangGraph (SQLite checkpointer) + Claude via the Anthropic SDK
+- **server/**: FastAPI + LangGraph (SQLite checkpointer) + Groq (free tier) via the Groq SDK
 
 ## Quickstart
 
@@ -14,7 +14,7 @@ correction you make becomes a visible, editable preference that shapes the next 
 cd server
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-export ANTHROPIC_API_KEY=sk-ant-...      # optional: without it, LexiScan runs in offline mode
+export GROQ_API_KEY=gsk_...             # free at console.groq.com; without it, offline mode
 uvicorn main:app --reload --port 5001
 
 # Frontend
@@ -75,13 +75,15 @@ plan ─► clarify ⏸ ─► plan            (only if the question is ambiguou
 - **Time travel**: `GET /threads/{id}/history` lists checkpoints; `POST /threads/{id}/rewind` forks from
   any of them, optionally with a new question or new pins.
 
-### Claude usage (`server/app/llm.py`)
+### Model usage (`server/app/llm.py`)
 
-- Model `claude-opus-5-5` (override with `LEXISCAN_MODEL`), adaptive thinking, per-node effort.
-- Structured outputs (`output_config.format`) generated from Pydantic schemas in `schemas.py`.
-- The redacted, clause-tagged contract is the first cached block of every request, so all nodes and
-  follow-up questions on a document share the prompt cache.
-- Server-side refusal fallbacks are enabled (`fallbacks: "default"`).
+- Groq, model `openai/gpt-oss-120b` by default (override with `GROQ_MODEL`), with per-node reasoning effort.
+- Strict JSON-schema structured outputs generated from the Pydantic schemas in `schemas.py`; if a strict
+  call is rejected it retries once in JSON mode, and every response is validated with Pydantic.
+- Calls run one at a time (`LEXISCAN_LLM_CONCURRENCY`) and rate limits are retried with back-off, to
+  stay inside Groq's free-tier tokens-per-minute limits.
+- Any failure (bad key, rate limit, malformed output) falls back to the offline heuristics for that step,
+  and the step is labelled `offline-fallback` so the reviewer knows.
 
 ### User-specific features
 
@@ -104,8 +106,9 @@ the API before multi-user deployment.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `ANTHROPIC_API_KEY` | — | Enables Claude; without it, offline mode |
-| `LEXISCAN_MODEL` | `claude-opus-5-5` | Model id |
+| `GROQ_API_KEY` | — | Enables the model (free key from console.groq.com); without it, offline mode |
+| `GROQ_MODEL` | `openai/gpt-oss-120b` | Groq model id |
+| `LEXISCAN_LLM_CONCURRENCY` | `1` | Parallel model calls (raise on a paid Groq tier) |
 | `LEXISCAN_EFFORT` | `medium` | Default effort; some nodes override it |
 | `LEXISCAN_OFFLINE` | — | `1` forces offline mode |
 | `LEXISCAN_DATA_DIR` | `server/var` | SQLite app DB and checkpoints |
@@ -123,7 +126,7 @@ Run one server worker: checkpoints and per-thread run locks are process-local SQ
 - Start command: `uvicorn main:app --host 0.0.0.0 --port $PORT --workers 1`
   (the legacy `gunicorn app:app` command also works; `gunicorn.conf.py` selects the uvicorn worker)
 - Python version comes from `server/.python-version` (3.12)
-- Environment variables: `ANTHROPIC_API_KEY` (otherwise offline mode); optionally `LEXISCAN_CORS_ORIGINS=https://<your-app>.vercel.app`
+- Environment variables: `GROQ_API_KEY` (otherwise offline mode); optionally `LEXISCAN_CORS_ORIGINS=https://<your-app>.vercel.app`
 - Free instances have an ephemeral disk, so the SQLite data resets on redeploys and restarts. To keep it, attach a
   persistent disk and set `LEXISCAN_DATA_DIR` to the mount path.
 
