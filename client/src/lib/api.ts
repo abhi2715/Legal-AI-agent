@@ -1,6 +1,6 @@
 // VITE_BACKEND_URL wins when set (Vercel → Settings → Environment Variables).
 // Without it, production builds use the Render service and dev uses the local server.
-const PROD_BACKEND = 'https://legal-ai-project.onrender.com';
+const PROD_BACKEND = 'https://lexiscan-backend-gupj.onrender.com';
 const BASE = (import.meta.env.VITE_BACKEND_URL || (import.meta.env.PROD ? PROD_BACKEND : 'http://127.0.0.1:5001')).replace(/\/$/, '');
 
 function userId(): string {

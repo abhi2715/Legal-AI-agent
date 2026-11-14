@@ -114,7 +114,7 @@ the API before multi-user deployment.
 | `LEXISCAN_DATA_DIR` | `server/var` | SQLite app DB and checkpoints |
 | `LEXISCAN_CORS_ORIGINS` | `*` | Comma-separated allowed origins |
 | `LEXISCAN_MAX_REVISIONS` | `4` | Revision loop bound |
-| `VITE_BACKEND_URL` (client) | dev: `http://127.0.0.1:5001`, prod build: `https://legal-ai-project.onrender.com` | API base URL |
+| `VITE_BACKEND_URL` (client) | dev: `http://127.0.0.1:5001`, prod build: `https://lexiscan-backend-gupj.onrender.com` | API base URL |
 
 Run one server worker: checkpoints and per-thread run locks are process-local SQLite.
 
