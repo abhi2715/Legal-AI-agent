@@ -41,10 +41,22 @@ for root, words in SYNONYMS.items():
         _SYN_INDEX.setdefault(w, set()).update([root, *words])
 
 
+_SUFFIXES = ("ations", "ation", "ating", "ated", "ates", "ate", "ities", "ity", "ings", "ing",
+             "ies", "ied", "ed", "es", "s", "e")
+
+
 def stem(word: str) -> str:
-    for suffix in ("ations", "ation", "ities", "ings", "ing", "ies", "ed", "es", "s"):
-        if word.endswith(suffix) and len(word) - len(suffix) >= 4:
-            return word[: -len(suffix)]
+    """Light suffix stripper so word forms meet: terminate / terminated / terminating / termination
+    all become "termin", cancel / cancellation become "cancel"."""
+    for _ in range(2):
+        for suffix in _SUFFIXES:
+            if word.endswith(suffix) and len(word) - len(suffix) >= 4:
+                word = word[: -len(suffix)]
+                break
+        else:
+            break
+    if len(word) > 4 and word[-1] == word[-2] and word[-1] in "lt":
+        word = word[:-1]  # cancell -> cancel, submitt -> submit
     return word
 
 
