@@ -88,7 +88,7 @@ export default function Documents() {
           <AlertTriangle size={16} />
           <div>
             <b>Running in offline mode.</b> Analysis uses deterministic pattern matching, so it flags and quotes but does
-            not interpret. Set <code>ANTHROPIC_API_KEY</code> on the server to enable Claude.
+            not interpret. {engine.reason ?? 'Set ANTHROPIC_API_KEY on the server to enable Claude.'}
           </div>
         </div>
       )}

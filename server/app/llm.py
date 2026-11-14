@@ -46,18 +46,56 @@ class Engine:
     def __init__(self) -> None:
         self.disabled_reason: str | None = None
         self.client: anthropic.Anthropic | None = None
+        self.key_source: str | None = None
         if FORCE_OFFLINE:
             self.disabled_reason = "Offline mode forced by LEXISCAN_OFFLINE"
-        elif not self._has_credentials():
-            self.disabled_reason = "No Anthropic credentials configured (set ANTHROPIC_API_KEY)"
-        else:
+            return
+        name, key = self._find_api_key()
+        if key:
+            self.key_source = name
+            self.client = anthropic.Anthropic(api_key=key, max_retries=3)
+            log.info("Claude enabled with the key from %s", name)
+        elif os.getenv("ANTHROPIC_AUTH_TOKEN") or (Path.home() / ".config" / "anthropic").exists():
             self.client = anthropic.Anthropic(max_retries=3)
+        else:
+            self.disabled_reason = self._missing_key_reason()
+            log.warning(self.disabled_reason)
 
     @staticmethod
-    def _has_credentials() -> bool:
-        if os.getenv("ANTHROPIC_API_KEY") or os.getenv("ANTHROPIC_AUTH_TOKEN"):
-            return True
-        return (Path.home() / ".config" / "anthropic").exists()
+    def _clean(value: str | None) -> str:
+        # Dashboards often keep pasted quotes, spaces or newlines around the value.
+        return (value or "").strip().strip("'\"").strip()
+
+    @classmethod
+    def _find_api_key(cls) -> tuple[str | None, str | None]:
+        """ANTHROPIC_API_KEY first; otherwise any variable whose value is an Anthropic key (sk-ant-...)."""
+        preferred = cls._clean(os.getenv("ANTHROPIC_API_KEY"))
+        if preferred:
+            return "ANTHROPIC_API_KEY", preferred
+        for name, value in sorted(os.environ.items()):
+            value = cls._clean(value)
+            if value.startswith("sk-ant-"):
+                return name, value
+        return None, None
+
+    @staticmethod
+    def _missing_key_reason() -> str:
+        # Report variable names and providers only, never values.
+        providers = {"sk-proj-": "OpenAI", "gsk_": "Groq", "AIza": "Google Gemini", "hf_": "Hugging Face",
+                     "sk-or-": "OpenRouter", "pplx-": "Perplexity", "xai-": "xAI", "sk-": "OpenAI-style"}
+        found = []
+        for name, value in sorted(os.environ.items()):
+            if not any(t in name.upper() for t in ("KEY", "TOKEN", "SECRET")):
+                continue
+            value = value.strip().strip("'\"")
+            provider = next((p for prefix, p in providers.items() if value.startswith(prefix)), None)
+            if provider:
+                found.append(f"{name} ({provider} key)")
+        if found:
+            return ("No Anthropic API key found. The server has " + ", ".join(found) +
+                    ", but LexiScan runs on Claude and needs an Anthropic key (it starts with sk-ant-). "
+                    "Add it as ANTHROPIC_API_KEY on the server.")
+        return "No Anthropic API key found on the server. Add ANTHROPIC_API_KEY (it starts with sk-ant-)."
 
     @property
     def online(self) -> bool:
